@@ -1,13 +1,42 @@
 class awstunnel {
   # Define variables
-  $certspath   = '/root/certs'
-  $initdpath   = '/etc/init.d'
-  $servicepath = "$initdpath/awstunneld"
-  $basescripts = '/tools'
-  $scriptspath = "$basescripts/scripts"
+  case $::operatingsystem {
+    redhat, centos: {
+      $certspath   = '/root/certs'
+      $initdpath   = '/etc/init.d'
+      $servicepath = "$initdpath/awstunneld"
+      $basescripts = '/tools'
+      $scriptspath = "$basescripts/scripts"
+      $puttypack   = 'putty'
+      $sshpack     = 'ssh'
+    }
+    debian, ubuntu: {
+      $certspath   = '/root/certs'
+      $initdpath   = '/etc/init.d'
+      $servicepath = "$initdpath/awstunneld"
+      $basescripts = '/tools'
+      $scriptspath = "$basescripts/scripts"
+      $puttypack   = 'putty'
+      $sshpack     = 'ssh'
+    }
+    default: {
+      $certspath   = '/root/certs'
+      $initdpath   = '/etc/init.d'
+      $servicepath = "$initdpath/awstunneld"
+      $basescripts = '/tools'
+      $scriptspath = "$basescripts/scripts"
+      $puttypack   = 'putty'
+      $sshpack     = 'ssh'
+    }
+  }
   # Instalación de packages
   package {'putty':
     ensure => installed,
+    name   => "$puttypack",
+  }
+  package {'ssh':
+    ensure => installed,
+    name   => "$sshpack",
   }
   # Configuraciones
   file {'basetoolscripts':

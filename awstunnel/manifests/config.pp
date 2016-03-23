@@ -1,42 +1,105 @@
 # Submódulo de configuraciones
-class ::awstunnel::config{
-  file {'awstuenneld':
+class awstunnel::config {
+  # Define variables
+  case $::operatingsystem {
+    redhat, centos: {
+      $certspath   = '/root/certs'
+      $initdpath   = '/etc/init.d'
+      $servicepath = "$initdpath/awstunneld"
+      $basescripts = '/tools'
+      $scriptspath = "$basescripts/scripts"
+    }
+    debian, ubuntu: {
+      $certspath   = '/root/certs'
+      $initdpath   = '/etc/init.d'
+      $servicepath = "$initdpath/awstunneld"
+      $basescripts = '/tools'
+      $scriptspath = "$basescripts/scripts"
+    }
+    default: {
+      $certspath   = '/root/certs'
+      $initdpath   = '/etc/init.d'
+      $servicepath = "$initdpath/awstunneld"
+      $basescripts = '/tools'
+      $scriptspath = "$basescripts/scripts"
+    }
+  }
+  # Configuraciones
+  file {'basetoolscripts':
+    ensure => directory,
+    path   => "$basescripts",
+    mode   => '0755',
+    owner  => 'root',
+    group  => 'root',
+  }
+  file {'toolscripts':
+    ensure => directory,
+    path   => "$scriptspath",
+    mode   => '0755',
+    owner  => 'root',
+    group  => 'root',
+    require => File['basetoolscripts'],
+  }
+  file {'certspath':
+    ensure   => directory,
+    path     => "$certspath",
+    mode   => '0755',
+    owner  => 'root',
+    group  => 'root',
+  }
+  file {'ppk':
     ensure  => file,
-    path    => '/etc/init.d/awstuenneld',
+    path    => "$certspath/keyfile.ppk",
+    require => File['certspath'],
+    source  => "puppet:///modules/awstunnel/keyfile.ppk",
+    mode   => '0755',
+    owner  => 'root',
+    group  => 'root',
+  }
+  file {'awstunneld':
+    ensure  => file,
+    path    => "$servicepath",
     owner   => 'root',
     group   => 'root',
     mode    => '0755',
     content => "#!/bin/bash
 
 export DISPLAY=:0.0
-export PATHTOCERT='/home/jorge/certs'
-export CERT=${PATHTOCERT}/keyfile.ppk
+export PATHTOCERT=\${HOME}'/certs'
+export CERT=\${PATHTOCERT}/keyfile.ppk
 export LPORT='8081'
 export RPORT='22'
 export REMOTEHOST='52.31.107.108'
 export REMOTEUSER='ec2-user'
 export PATH=\"$::path\"
 export BINPATH='/usr/bin'
+export PID=`lsof -nPi:\${LPORT} | grep LISTEN | head -1 | awk {'print \$2'}`
+
+xhost +
 
 start() {
-  putty -ssh -i ${CERT} -D ${LPORT} -P ${RPORT} -l ${REMOTEUSER} ${REMOTEHOST} &
+  putty -ssh -i \${CERT} -D \${LPORT} -P \${RPORT} -l \${REMOTEUSER} \${REMOTEHOST} &
 }
 
 stop() {
-  export PID=`lsof -nPi:${LPORT} | grep LISTEN | head -1 | awk {'print $2'}`
-  kill -9 ${PID}
+  #export PID=`lsof -nPi:\${LPORT} | grep LISTEN | head -1 | awk {'print \$2'}`
+  kill -9 \${PID}
 }
 
 status() {
-  if [[ `lsof -nPi:${LPORT} | grep LISTEN | wc -l` -lt 2 ]]; then
-    echo -e '\nAL: Túnel AWS, puerto ${LPORT}: CERRADO.\n'
+  if [ `lsof -nPi:\${LPORT} | grep LISTEN | wc -l` -lt 2 ]; then
+  #if [[ \"${PID}\" == \"\" ]]; then
+    echo -e '\\nAL: Túnel AWS, puerto '\${LPORT}': CERRADO.\\n'
+    start
+    exit 1
   else
-    export PID=`lsof -nPi:${LPORT} | grep LISTEN | head -1 | awk {'print $2'}`
-    echo -e '\nOK: Túnel AWS, puerto ${LPORT}: ABIERTO, PID ${PID}.\n'
+    #export PID=`lsof -nPi:\${LPORT} | grep LISTEN | head -1 | awk {'print \$2'}`
+    echo -e '\\nOK: Túnel AWS, puerto '\${LPORT}': ABIERTO, PID '\${PID}'.\\n'
+    exit 0
   fi
 }
 
-case $1 in
+case \$1 in
   start)
         start
         ;;
@@ -52,7 +115,7 @@ case $1 in
         start
         ;;
   *)
-        echo 'Uso: $0 [start|stop|status|restart]'
+        echo 'Uso: \$0 [start|stop|status|restart]'
         exit 1
 esac",
   }

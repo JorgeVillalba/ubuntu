@@ -1,14 +1,38 @@
 # Submódulo de instalación
-class ::awstunnel::service{
+class awstunnel::service {
+  # Define variables
+  case $::operatingsystem {
+    redhat, centos: {
+      $initdpath   = '/etc/init.d'
+      $servicepath = "$initdpath/awstunneld"
+    }
+    debian, ubuntu: {
+      $initdpath   = '/etc/init.d'
+      $servicepath = "$initdpath/awstunneld"
+    }
+    default: {
+      $initdpath   = '/etc/init.d'
+      $servicepath = "$initdpath/awstunneld"
+    }
+  }
   service {'awstunneld':
-    ensure  => running,
-    name    => 'awstunneld',
-    enable  => true,
-    path    => '/etc/init.d/awstuenneld',
-    stop    => '/etc/init.d/awstuenneld stop',
-    start   => '/etc/init.d/awstuenneld start',
-    status  => '/etc/init.d/awstuenneld status',
-    restart => '/etc/init.d/awstuenneld restart',
-    require => File['awstuenneld'],
+    ensure     => running,
+    #name       => 'awstunneld',
+    enable     => true,
+    path       => "$initdpath",
+    hasstatus  => true,
+    hasrestart => true,
+    stop       => "$servicepath stop",
+    start      => "$servicepath start",
+    status     => "$servicepath status",
+    restart    => "$servicepath restart",
+    require    => File['awstunneld'],
+  }
+  cron {'awstunnel':
+    command     => "sh -x $servicepath status >/tmp/tunnel.log 2>&1",
+    user        => 'root',
+    hour        => '*',
+    minute      => '*/1',
+    environment => "PATH=$::path:.",
   }
 }
