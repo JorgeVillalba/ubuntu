@@ -8,6 +8,8 @@ class awstunnel::config {
       $servicepath = "$initdpath/awstunneld"
       $basescripts = '/tools'
       $scriptspath = "$basescripts/scripts"
+      $prxsysdir   = '/etc/apt'
+      $prxsysconf  = "$prxsysdir/apt.conf"
     }
     debian, ubuntu: {
       $certspath   = '/root/certs'
@@ -15,6 +17,8 @@ class awstunnel::config {
       $servicepath = "$initdpath/awstunneld"
       $basescripts = '/tools'
       $scriptspath = "$basescripts/scripts"
+      $prxsysdir   = '/etc/apt'
+      $prxsysconf  = "$prxsysdir/apt.conf"
     }
     default: {
       $certspath   = '/root/certs'
@@ -22,6 +26,8 @@ class awstunnel::config {
       $servicepath = "$initdpath/awstunneld"
       $basescripts = '/tools'
       $scriptspath = "$basescripts/scripts"
+      $prxsysdir   = '/etc/apt'
+      $prxsysconf  = "$prxsysdir/apt.conf"
     }
   }
   # Configuraciones
@@ -73,17 +79,27 @@ export REMOTEHOST='52.31.107.108'
 export REMOTEUSER='ec2-user'
 export PATH=\"$::path\"
 export BINPATH='/usr/bin'
+export PRXSYSDIR=$prxsysdir
+export PRXSYSCONF=$prxsysconf
 export PID=`lsof -nPi:\${LPORT} | grep LISTEN | head -1 | awk {'print \$2'}`
 
 xhost +
 
 start() {
   putty -ssh -i \${CERT} -D \${LPORT} -P \${RPORT} -l \${REMOTEUSER} \${REMOTEHOST} &
+  if [ ! -d \${PRXSYSDIR} ]; then
+    mkdir \${PRXSYSDIR}
+    chmod 755 \${PRXSYSDIR}
+  fi
+  echo 'Acquire::socks::proxy \"socks://127.0.0.1:'\${LPORT}'/\";' > \${PRXSYSCONF}
 }
 
 stop() {
   #export PID=`lsof -nPi:\${LPORT} | grep LISTEN | head -1 | awk {'print \$2'}`
   kill -9 \${PID}
+  if [ -f \${PRXSYSCONF} ]; then
+    > \${PRXSYSCONF}
+  fi
 }
 
 status() {
