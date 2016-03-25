@@ -9,7 +9,7 @@ class awstunnel::config {
       $basescripts = '/tools'
       $scriptspath = "$basescripts/scripts"
       $prxsysdir   = '/etc/apt'
-      $prxsysconf  = "$prxsysdir/apt.conf"
+      $prxsysconf  = 'apt.conf'
     }
     debian, ubuntu: {
       $certspath   = '/root/certs'
@@ -18,7 +18,7 @@ class awstunnel::config {
       $basescripts = '/tools'
       $scriptspath = "$basescripts/scripts"
       $prxsysdir   = '/etc/apt'
-      $prxsysconf  = "$prxsysdir/apt.conf"
+      $prxsysconf  = 'apt.conf'
     }
     default: {
       $certspath   = '/root/certs'
@@ -27,7 +27,7 @@ class awstunnel::config {
       $basescripts = '/tools'
       $scriptspath = "$basescripts/scripts"
       $prxsysdir   = '/etc/apt'
-      $prxsysconf  = "$prxsysdir/apt.conf"
+      $prxsysconf  = 'apt.conf'
     }
   }
   # Configuraciones
@@ -70,6 +70,8 @@ class awstunnel::config {
     mode    => '0755',
     content => "#!/bin/bash
 
+export USER='root'
+export HOME=`grep \${USER} /etc/passwd | awk -F: {'print \$6'}`
 export DISPLAY=:0.0
 export PATHTOCERT=\${HOME}'/certs'
 export CERT=\${PATHTOCERT}/keyfile.ppk
@@ -80,7 +82,7 @@ export REMOTEUSER='ec2-user'
 export PATH=\"$::path\"
 export BINPATH='/usr/bin'
 export PRXSYSDIR=$prxsysdir
-export PRXSYSCONF=$prxsysconf
+export PRXSYSCONF=\${PRXSYSDIR}/$prxsysconf
 export PID=`lsof -nPi:\${LPORT} | grep LISTEN | head -1 | awk {'print \$2'}`
 
 xhost +
